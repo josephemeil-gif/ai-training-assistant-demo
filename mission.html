@@ -272,7 +272,7 @@ document.getElementById('homeBtn').onclick=()=>{stopLoop();show('home');document
 /* ============ ADVENTURE ============ */
 function startAdv(){
  G={hearts:3,score:0,streak:0,gi:0,prog:0,wx:0,confetti:[],
-    py:GROUND,vy:0,inv:0,coins:[],crates:[],door:null,t0:performance.now()};
+    py:GROUND,vy:0,inv:0,coins:[],crates:[],doors:[],t0:performance.now()};
  const spacing=520;
  let x=900;
  topic.qs.forEach((q,i)=>{const dx=x+spacing;G.doors.push({x:dx,q,open:false});
