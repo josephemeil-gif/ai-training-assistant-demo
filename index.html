@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Training Assistant — Demo</title>
+<style>
+  :root{
+    --navy:#0d1b2a; --navy2:#132739; --teal:#0f4c5c; --amber:#f77f00; --amber2:#fca311;
+    --bg:#f6f8fa; --card:#ffffff; --ink:#1b2631; --mut:#5c6b7a; --line:#e4e9ee;
+    --ok:#2a9d5c; --warn:#d1495b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Arial,sans-serif}
+  body{background:var(--bg);color:var(--ink)}
+  [dir="rtl"] body{text-align:right}
+  .wrap{max-width:980px;margin:0 auto;padding:0 16px}
+  header{background:linear-gradient(135deg,var(--navy) 0%,var(--teal) 100%);color:#fff;padding:26px 0 0}
+  .logo-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .brand{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#9fc4cf}
+  .lang{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:6px 14px;cursor:pointer;font-size:13px}
+  .hero{padding:34px 0 42px}
+  .hero h1{font-size:clamp(26px,4.5vw,40px);line-height:1.15;font-weight:800}
+  .hero h1 em{color:var(--amber2);font-style:normal}
+  .hero p{margin-top:14px;font-size:16px;color:#cfe0e6;max-width:640px;line-height:1.6}
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:5px 12px;font-size:12px;color:#e6f0f3}
+  nav{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px 14px 0 0;margin-top:0;overflow-x:auto}
+  nav button{flex:1;border:0;background:none;padding:14px 10px;font-size:14px;font-weight:600;color:var(--mut);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+  nav button.on{color:var(--teal);border-bottom-color:var(--amber)}
+  section.screen{background:var(--card);border:1px solid var(--line);border-top:0;border-radius:0 0 14px 14px;padding:26px 20px;display:none}
+  section.screen.on{display:block}
+  h2{font-size:20px;color:var(--navy);margin-bottom:6px}
+  .sub{color:var(--mut);font-size:14px;margin-bottom:18px;line-height:1.5}
+  /* chat */
+  .phone{max-width:430px;margin:0 auto;background:linear-gradient(180deg,#eef4f7,#fff);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(13,27,42,.12)}
+  .chat-head{background:var(--teal);color:#fff;padding:13px 16px;display:flex;align-items:center;gap:11px}
+  .avatar{width:38px;height:38px;border-radius:50%;background:var(--amber2);display:flex;align-items:center;justify-content:center;font-size:19px}
+  .chat-head .who b{display:block;font-size:14px}
+  .chat-head .who span{font-size:11px;color:#c8e3ea}
+  .chat-body{height:390px;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:82%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.55;white-space:pre-line;animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .bot{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px;align-self:flex-start}
+  .me{background:var(--teal);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+  .me.ar,.bot.ar{direction:rtl;text-align:right}
+  .time{font-size:10px;color:#9aa8b4;align-self:flex-start;margin-top:-6px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line);background:#fff}
+  .chip{border:1px solid var(--teal);color:var(--teal);background:#fff;border-radius:16px;padding:7px 12px;font-size:12px;cursor:pointer}
+  .chip:hover{background:var(--teal);color:#fff}
+  .typing{display:flex;gap:4px;padding:12px 14px;background:#fff;border-top:1px solid var(--line)}
+  .typing i{width:8px;height:8px;background:#b9c8d0;border-radius:50%;animation:blink 1s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+  .chat-input{display:flex;border-top:1px solid var(--line);background:#fff}
+  .chat-input input{flex:1;border:0;padding:13px 14px;font-size:13.5px;outline:none;background:transparent}
+  .chat-input button{border:0;background:var(--amber);color:#fff;font-weight:700;padding:0 20px;cursor:pointer;font-size:14px}
+  .note{background:#fff8ec;border:1px solid #f2dfb8;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#8a6d1f;margin:16px auto 0;max-width:430px;line-height:1.5}
+  /* quiz */
+  .qcard{max-width:560px;margin:0 auto;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 8px 24px rgba(13,27,42,.06)}
+  .qtag{font-size:11px;letter-spacing:1.5px;color:var(--amber);font-weight:700;text-transform:uppercase}
+  .qtext{font-size:17px;font-weight:700;margin:10px 0 16px;line-height:1.45}
+  .opt{display:block;width:100%;text-align:start;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:13px 15px;margin-bottom:9px;font-size:14px;cursor:pointer;transition:.15s}
+  .opt:hover{border-color:var(--teal)}
+  .opt.right{border-color:var(--ok);background:#eefaf2}
+  .opt.wrong{border-color:var(--warn);background:#fdeef0}
+  .confrow{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
+  .confrow span{font-size:12.5px;color:var(--mut)}
+  .conf{border:1px solid var(--line);border-radius:16px;padding:6px 13px;font-size:12.5px;cursor:pointer;background:#fff}
+  .conf:hover{border-color:var(--amber)}
+  .verdict{margin-top:16px;border-radius:12px;padding:14px;font-size:13.5px;line-height:1.55;display:none}
+  .verdict.risk{background:#fdeef0;border:1px solid #f0c2c9;color:#8c2f3c;display:block}
+  .verdict.good{background:#eefaf2;border:1px solid #bfe7cd;color:#1d6b40;display:block}
+  /* dashboard */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .stat{border:1px solid var(--line);border-radius:14px;padding:16px}
+  .stat b{font-size:26px;color:var(--teal);display:block}
+  .stat span{font-size:12.5px;color:var(--mut)}
+  .bars{margin-top:18px;border:1px solid var(--line);border-radius:14px;padding:18px}
+  .brow{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .brow label{width:110px;font-size:13px}
+  .track{flex:1;height:9px;background:#edf1f4;border-radius:6px;overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--amber));border-radius:6px}
+  .brow span{font-size:12.5px;color:var(--mut);width:38px;text-align:end}
+  .brow{cursor:pointer;border-radius:8px;padding:3px 4px;transition:.15s}
+  .brow:hover{background:#f2f7f9}
+  .hint{font-size:12px;color:#8a97a3;margin-bottom:12px}
+  .drill{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:16px;display:none}
+  .drill h4{font-size:13.5px;color:var(--navy);margin-bottom:10px}
+  .drow{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12.5px}
+  .drow label{width:120px;color:var(--mut)}
+  .flag{background:#fdeef0;color:#8c2f3c;border-radius:10px;padding:2px 8px;font-size:11px}
+  .alerts{border:1px solid #f2dfb8;background:#fff8ec;border-radius:14px;padding:16px;margin-top:14px;font-size:13px;line-height:1.7}
+  /* plan */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:6px}
+  .step{border:1px solid var(--line);border-radius:14px;padding:18px}
+  .step .n{width:30px;height:30px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;margin-bottom:10px}
+  .step h3{font-size:14.5px;margin-bottom:6px;color:var(--navy)}
+  .step p{font-size:12.5px;color:var(--mut);line-height:1.55}
+  footer{background:var(--navy);color:#9fb6c4;font-size:12px;text-align:center;padding:22px 16px;margin-top:40px;line-height:1.7}
+  footer b{color:#fff}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="logo-row">
+      <span class="brand" data-en="Good Food Group · L&amp;D" data-ar="Good Food Group · التدريب والتطوير">Good Food Group · L&amp;D</span>
+      <button class="lang" id="langBtn">العربية</button>
+    </div>
+    <div class="hero">
+      <h1 data-en="AI Assistant for your <em>distributed team</em>" data-ar="مساعد ذكي لـ <em>فريقك الموزع</em>">AI Assistant for your <em>distributed team</em></h1>
+      <p data-en="Every crew member, in every branch, gets instant answers from your own SOPs — in English or Arabic, on their phone, 24/7. No classrooms, no waiting for a supervisor, no lost knowledge." data-ar="كل موظف، في كل فرع، يحصل على إجابات فورية من إجراءات التشغيل الخاصة بك — بالإنجليزية أو العربية، على هاتفه، على مدار الساعة. بدون قاعات تدريب، بدون انتظار المشرف، بدون فقدان المعرفة.">Every crew member, in every branch, gets instant answers from your own SOPs — in English or Arabic, on their phone, 24/7. No classrooms, no waiting for a supervisor, no lost knowledge.</p>
+      <div class="pills">
+        <span class="pill" data-en="Trained on your SOPs" data-ar="مدرّب على إجراءاتك">Trained on your SOPs</span>
+        <span class="pill" data-en="English + Arabic" data-ar="إنجليزي + عربي">English + Arabic</span>
+        <span class="pill" data-en="Works on WhatsApp &amp; web" data-ar="يعمل على واتساب والمتصفح">Works on WhatsApp &amp; web</span>
+        <span class="pill" data-en="Manager dashboard" data-ar="لوحة تحكم للمديرين">Manager dashboard</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav>
+    <button class="on" data-t="assistant" data-en="Live demo" data-ar="تجربة مباشرة">Live demo</button>
+    <button data-t="quiz" data-en="Micro-quiz" data-ar="اختبار سريع">Micro-quiz</button>
+    <button data-t="dash" data-en="Manager view" data-ar="لوحة المدير">Manager view</button>
+    <button data-t="plan" data-en="Rollout plan" data-ar="خطة التطبيق">Rollout plan</button>
+  </nav>
+
+  <!-- CHAT -->
+  <section class="screen on" id="assistant">
+    <h2 data-en="Try it — ask the assistant anything" data-ar="جرّب — اسأل المساعد أي شيء">Try it — ask the assistant anything</h2>
+    <p class="sub" data-en="This is exactly what a crew member sees on their phone. Tap a suggestion or type your own question — in English or Arabic." data-ar="هذا بالضبط ما يراه الموظف على هاتفه. اضغط على أي سؤال جاهز أو اكتب سؤالك — بالإنجليزية أو العربية.">This is exactly what a crew member sees on their phone. Tap a suggestion or type your own question — in English or Arabic.</p>
+    <div class="phone">
+      <div class="chat-head">
+        <div class="avatar">🧑‍🍳</div>
+        <div class="who"><b data-en="Training Assistant" data-ar="مساعد التدريب">Training Assistant</b><span data-en="Online · answers from your SOPs" data-ar="متصل · إجابات من إجراءاتك">Online · answers from your SOPs</span></div>
+      </div>
+      <div class="chat-body" id="chat"></div>
+      <div class="typing" id="typing" style="display:none"><i></i><i></i><i></i></div>
+      <div class="chips" id="chips"></div>
+      <div class="chat-input">
+        <input id="q" data-ph="Type a question…" data-phar="اكتب سؤالك…" placeholder="Type a question…">
+        <button id="send">➤</button>
+      </div>
+    </div>
+    <p class="note" data-en="Demo mode: responses are pre-scripted from a sample SOP knowledge base. In production this is powered by a real AI model reading your actual SOP documents." data-ar="وضع العرض: الإجابات مكتوبة مسبقًا من قاعدة معرفة تجريبية. في التطبيق الفعلي يتم تشغيله بنموذج ذكي يقرأ إجراءاتك التشغيلية الحقيقية.">Demo mode: responses are pre-scripted from a sample SOP knowledge base. In production this is powered by a real AI model reading your actual SOP documents.</p>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="screen" id="quiz">
+    <h2 data-en="3-minute micro-quizzes, not 30-minute courses" data-ar="اختبارات قصيرة ٣ دقائق وليس دورات ٣٠ دقيقة">3-minute micro-quizzes, not 30-minute courses</h2>
+    <p class="sub" data-en="Each answer also asks: how sure are you? That's how we find the crew who are confident but wrong — the real risk a completion report can never show." data-ar="كل إجابة تسأل أيضًا: ما مدى ثقتك؟ هكذا نكتشف الموظفين الواثقين المخطئين — الخطر الحقيقي الذي لا يظهر في تقارير الإكمال.">Each answer also asks: how sure are you? That's how we find the crew who are confident but wrong — the real risk a completion report can never show.</p>
+    <div class="qcard">
+      <span class="qtag" data-en="Food safety · Review 3 of 5" data-ar="سلامة الغذاء · مراجعة ٣ من ٥">Food safety · Review 3 of 5</span>
+      <div class="qtext" data-en="What is the maximum safe temperature for a fridge used to store ready-to-eat food?" data-ar="ما هي درجة الحرارة القصوى الآمنة للثلاجة التي تحفظ فيها الأطعمة الجاهزة للأكل؟">What is the maximum safe temperature for a fridge used to store ready-to-eat food?</div>
+      <button class="opt" data-c="0">10°C</button>
+      <button class="opt" data-c="1">5°C</button>
+      <button class="opt" data-c="0">0°C</button>
+      <div class="confrow" id="confrow" style="display:none">
+        <span data-en="How sure are you?" data-ar="ما مدى ثقتك؟">How sure are you?</span>
+        <button class="conf" data-v="sure" data-en="Very sure" data-ar="واثق جدًا">Very sure</button>
+        <button class="conf" data-v="mid" data-en="Not sure" data-ar="غير متأكد">Not sure</button>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+    <p class="note" data-en="Sample question from a food-safety course. The assistant sends these automatically to each crew member based on their personal review schedule." data-ar="سؤال من دورة سلامة الغذاء. يرسل المساعد هذه الأسئلة تلقائيًا لكل موظف حسب جدول المراجعة الخاص به.">Sample question from a food-safety course. The assistant sends these automatically to each crew member based on their personal review schedule.</p>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="screen" id="dash">
+    <h2 data-en="What the manager sees" data-ar="ما يراه المدير">What the manager sees</h2>
+    <p class="sub" data-en="Live readiness across every brand and branch — not just 'who completed the course', but 'who actually knows it'." data-ar="جاهزية مباشرة لكل علامة وفرع — ليس فقط من أكمل الدورة، بل من يعرفها فعلًا.">Live readiness across every brand and branch — not just 'who completed the course', but 'who actually knows it'.</p>
+    <div class="grid">
+      <div class="stat"><b>87%</b><span data-en="Crew trained on Q3 food-safety standard" data-ar="تم تدريبهم على معيار سلامة الغذاء للربع الثالث">Crew trained on Q3 food-safety standard</span></div>
+      <div class="stat"><b>12</b><span data-en="Crew flagged confident-but-wrong — booked for coaching" data-ar="موظفون واثقون مخطئون — محجوزون لتدريب فردي">Crew flagged confident-but-wrong — booked for coaching</span></div>
+      <div class="stat"><b>4.2×</b><span data-en="More questions answered vs. emailing a supervisor" data-ar="أسئلة تمت إجابتها مقارنة بالتواصل مع المشرف">More questions answered vs. emailing a supervisor</span></div>
+    </div>
+    <div class="bars" id="bars">
+      <p class="hint" data-en="👆 Tap any row to see branch-level detail" data-ar="👆 اضغط على أي صف لعرض تفاصيل الفروع">👆 Tap any row to see branch-level detail</p>
+      <div class="brow" data-b="a"><label data-en="Brand A — 6 branches" data-ar="العلامة أ — ٦ فروع">Brand A — 6 branches</label><div class="track"><div class="fill" style="width:91%"></div></div><span>91%</span></div>
+      <div class="brow" data-b="b"><label data-en="Brand B — 4 branches" data-ar="العلامة ب — ٤ فروع">Brand B — 4 branches</label><div class="track"><div class="fill" style="width:78%"></div></div><span>78%</span></div>
+      <div class="brow" data-b="c"><label data-en="Brand C — 9 branches" data-ar="العلامة ج — ٩ فروع">Brand C — 9 branches</label><div class="track"><div class="fill" style="width:84%"></div></div><span>84%</span></div>
+      <div class="brow" data-b="n"><label data-en="New joiners (&lt;30 days)" data-ar="الموظفون الجدد (أقل من ٣٠ يوم)">New joiners (&lt;30 days)</label><div class="track"><div class="fill" style="width:63%"></div></div><span>63%</span></div>
+    </div>
+    <div class="drill" id="drill"></div>
+    <div class="alerts" id="alerts">
+      <b data-en="This week the assistant flagged:" data-ar="هذا الأسبوع رصد المساعد:">This week the assistant flagged:</b><br>
+      <span data-en="3 crew answered 'very sure' on allergen questions — incorrectly. Branch-level coaching session recommended." data-ar="٣ موظفين أجابوا بثقة على أسئلة الحساسية — خطأً. يُنصح بجلسة تدريب على مستوى الفرع.">3 crew answered 'very sure' on allergen questions — incorrectly. Branch-level coaching session recommended.</span><br>
+      <span data-en="7 certificates expire in the next 14 days — auto-reminders already sent." data-ar="٧ شهادات ستنتهي خلال ١٤ يومًا — تم إرسال تنبيهات تلقائية.">7 certificates expire in the next 14 days — auto-reminders already sent.</span>
+    </div>
+    <p class="note" data-en="Figures shown are illustrative demo data. In production this dashboard reads live from the platform's database." data-ar="الأرقام المعروضة بيانات تجريبية. في التطبيق الفعلي تُقرأ لوحة التحكم من قاعدة البيانات مباشرة.">Figures shown are illustrative demo data. In production this dashboard reads live from the platform's database.</p>
+  </section>
+
+  <!-- PLAN -->
+  <section class="screen" id="plan">
+    <h2 data-en="How we roll it out" data-ar="خطة التطبيق">How we roll it out</h2>
+    <p class="sub" data-en="Low risk, low cost, measurable at every step." data-ar="مخاطر منخفضة وتكلفة منخفضة ونتائج قابلة للقياس في كل خطوة.">Low risk, low cost, measurable at every step.</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3 data-en="Pilot (4 weeks)" data-ar="المرحلة التجريبية (٤ أسابيع)">Pilot (4 weeks)</h3><p data-en="One brand, 2–3 branches. Upload existing SOPs. Crew get the assistant on WhatsApp or their phone browser. Measure: questions answered, quiz scores, time saved." data-ar="علامة واحدة، ٢–٣ فروع. رفع إجراءات التشغيل الحالية. يحصل الموظفون على المساعد عبر واتساب أو متصفح الهاتف. القياس: الأسئلة المُجابة، نتائج الاختبارات، الوقت الموفر.">One brand, 2–3 branches. Upload existing SOPs. Crew get the assistant on WhatsApp or their phone browser. Measure: questions answered, quiz scores, time saved.</p></div>
+      <div class="step"><div class="n">2</div><h3 data-en="Learn &amp; adjust" data-ar="التعلم والتحسين">Learn &amp; adjust</h3><p data-en="See which questions get asked most — that tells us exactly where the SOPs are unclear. Supervisors save answering time; we measure it." data-ar="نرى الأسئلة الأكثر تكرارًا — يوضح لنا أين تكون الإجراءات غير واضحة. نوفر وقت المشرفين ونقيس ذلك.">See which questions get asked most — that tells us exactly where the SOPs are unclear. Supervisors save answering time; we measure it.</p></div>
+      <div class="step"><div class="n">3</div><h3 data-en="Scale group-wide" data-ar="التوسع على مستوى المجموعة">Scale group-wide</h3><p data-en="Roll out to all brands and branches, connect the manager dashboard to live data, add spaced-repetition micro-quizzes for certifications." data-ar="التوسع لكل العلامات والفروع، ربط لوحة المديرين بالبيانات المباشرة، إضافة اختبارات المراجعة المتباعدة للشهادات.">Roll out to all brands and branches, connect the manager dashboard to live data, add spaced-repetition micro-quizzes for certifications.</p></div>
+      <div class="step"><div class="n">4</div><h3 data-en="Advanced (phase 2)" data-ar="الميزات المتقدمة (المرحلة ٢)">Advanced (phase 2)</h3><p data-en="AI role-play practice (handling angry customers), auto-generated quizzes from SOP updates, and integration with the existing Cognify learning platform." data-ar="تدريب بالتمثيل الذكي (التعامل مع العملاء الغاضبين)، اختبارات تُنشأ تلقائيًا من تحديثات الإجراءات، والتكامل مع منصة Cognify الحالية.">AI role-play practice (handling angry customers), auto-generated quizzes from SOP updates, and integration with the existing Cognify learning platform.</p></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <b data-en="AI Training Assistant — Director Demo" data-ar="مساعد التدريب الذكي — عرض للمدير">AI Training Assistant — Director Demo</b><br>
+  <span data-en="Prepared by Clark, Joseph's assistant · September 2026" data-ar="إعداد Clark، مساعد جوزيف · سبتمبر ٢٠٢٦">Prepared by Clark, Joseph's assistant · September 2026</span>
+</footer>
+
+<script>
+/* ---------------- i18n ---------------- */
+let lang='en';
+const T={};
+document.getElementById('langBtn').addEventListener('click',()=>{
+  lang = lang==='en'?'ar':'en';
+  document.documentElement.lang = lang==='ar'?'ar':'en';
+  document.documentElement.dir  = lang==='ar'?'rtl':'ltr';
+  document.getElementById('langBtn').textContent = lang==='ar'?'English':'العربية';
+  document.querySelectorAll('[data-en]').forEach(el=>{ el.textContent = el.getAttribute('data-'+lang); });
+  const q=document.getElementById('q');
+  q.setAttribute('placeholder', lang==='ar'?q.getAttribute('data-phar'):q.getAttribute('data-ph'));
+  renderChips();
+});
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  document.querySelectorAll('section.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(b.dataset.t).classList.add('on');
+}));
+
+/* ---------------- chat knowledge ---------------- */
+const KB=[
+ {k:['fridge','temperature','cold','ثلاجة','حرارة','برد'],a:{en:"Your SOP (FS-04) says ready-to-eat food must be stored at **5°C or below**.\n\nQuick checks:\n1. Check the fridge thermometer at the start of every shift and log it.\n2. If it reads above 5°C, don't store new food — report it to the shift supervisor immediately.\n3. Ready-to-eat items go on the top shelf, raw items always below.\n\nWould you like the full cool-down procedure for hot food?",ar:"إجراء التشغيل (FS-04) ينص على حفظ الأطعمة الجاهزة للأكل عند **5 درجات مئوية أو أقل**.\n\nخطوات سريعة:\n١. افحص ترمومتر الثلاجة في بداية كل وردية وسجّل القراءة.\n٢. إذا كانت أعلى من ٥ درجات، لا تضع أطعمة جديدة — وأبلغ مشرف الوردية فورًا.\n٣. الأطعمة الجاهزة في الرف العلوي، والأطعمة النيئة دائمًا في الأسفل.\n\nهل تريد إجراء تبريد الأطعمة الساخنة كاملًا؟"}},
+ {k:['complain','complaint','angry','wrong order','شكوى','غاضب','خطأ'],a:{en:"Here's the L.A.S.T. model from your customer service SOP (CS-01):\n\n1. **Listen** — let them finish, never interrupt.\n2. **Apologize** — sincerely, without blaming anyone.\n3. **Solve** — remake the order on priority. Up to 15 KD can be approved by the shift supervisor on the spot.\n4. **Thank** them for telling us.\n\nIf the customer raises their voice or asks for a manager, call the shift supervisor immediately — don't handle it alone. Want the refund policy details?",ar:"هذا نموذج L.A.S.T من إجراء خدمة العملاء (CS-01):\n\n١. **استمع** — دعه يكمل ولا تقاطعه أبدًا.\n٢. **اعتذر** — بصدق ودون لوم أي شخص.\n٣. **حل** — أعد تنفيذ الطلب كأولوية. حتى ١٥ دينار يمكن للمشرف الموافقة عليها فورًا.\n٤. **اشكره** لإبلاغنا.\n\nإذا رفع العميل صوته أو طلب المدير، نادِ مشرف الوردية فورًا — لا تتعامل معه وحدك. هل تريد تفاصيل سياسة الاسترجاع؟"}},
+ {k:['hand','wash','hygiene','نظافة','غسل'],a:{en:"Per SOP FS-02, wash your hands for at least 20 seconds:\n\n• Before touching food or gloves\n• After handling raw meat, money, or your phone\n• After touching your face, hair, or apron\n\nThe 6 steps: wet → soap → 20s scrub (between fingers!) → rinse → paper towel → sanitizer.\n\nHandwashing is the #1 thing mystery shoppers look for. 🧼",ar:"حسب الإجراء FS-02، اغسل يديك لمدة ٢٠ ثانية على الأقل:\n\n• قبل لمس الطعام أو القفازات\n• بعد لمس اللحوم النيئة أو النقود أو هاتفك\n• بعد لمس وجهك أو شعرك أو المريول\n\nالخطوات الست: بلّل → صابون → فرك ٢٠ ثانية (بين الأصابع!) → شطف → منشفة ورقية → معقم.\n\nغسل اليدين هو أول ما يلاحظه المتسوقون الخفيون. 🧼"}},
+ {k:['close','closing','shift end','إغلاق','نهاية الوردية'],a:{en:"End-of-shift checklist (from the closing SOP):\n\n1. Clean and sanitize all stations, then the floor\n2. Wrap, label and date all remaining food (labels are by the prep station)\n3. Back-count cash with the shift supervisor and sign the log\n4. Equipment off: fryers filtered, grills cooled, hot-holding off\n5. Final temperature log before you clock out\n\nThe full checklist is 12 items — want me to send it as a list you can tick off?",ar:"قائمة نهاية الوردية (من إجراء الإغلاق):\n\n١. نظّف وعقّم كل المحطات ثم الأرضية\n٢. غلّف وسمّز وتاريخ كل الطعام المتبقي (الملصقات عند محطة التحضير)\n٣. إعادة عد النقدية مع مشرف الوردية والتوقيع في السجل\n٤. أطفئ المعدات: تصفية القلايات، تبريد الشوايات، إيقاف الحفظ الساخن\n٥. سجل درجات الحرارة الأخير قبل إنهاء الدوام\n\nالقائمة الكاملة ١٢ بندًا — أرسلها لك كقائمة تشطب عليها؟"}},
+ {k:['first day','new','onboard','جديد','أول يوم'],a:{en:"Welcome! 🎉 Your first-day checklist:\n\n1. Get your uniform and name tag from the office\n2. Your buddy for this week is assigned by the shift supervisor\n3. Complete the 3 safety intro lessons in the app (about 10 minutes)\n4. Watch the station demo before your first hands-on task\n\nQuestion of the day: what temperature should the walk-in fridge read? Answer in the app to earn your first 50 points! 💪",ar:"أهلًا بك! 🎉 قائمة أول يوم:\n\n١. استلم الزي والبطاقة التعريفية من المكتب\n٢. زميلك لهذا الأسبوع يحدده مشرف الوردية\n٣. أكمل دروس السلامة الثلاثة في التطبيق (١٠ دقائق تقريبًا)\n٤. شاهد عرض المحطة قبل أول مهمة عملية\n\nسؤال اليوم: ما درجة حرارة ثلازة الغرفة الباردة؟ أجب في التطبيق واكسب أول ٥٠ نقطة! 💪"}},
+ {k:['allergen','allergy','حساسية'],a:{en:"Allergen rule (FS-07): never guess.\n\n1. If a guest mentions an allergy, tell the shift supervisor immediately.\n2. Only the supervisor may confirm which items are safe — using the allergen matrix binder.\n3. Change gloves and use the dedicated purple board for any allergy order.\n4. The order gets a flag ticket — it travels with the food to the counter.\n\n**If you are not 100% sure, the answer is always: 'let me check with my supervisor.'**",ar:"قاعدة الحساسية (FS-07): لا تخمّن أبدًا.\n\n١. إذا ذكر الضيف حساسية، أبلغ مشرف الوردية فورًا.\n٢. المشرف فقط يؤكد الأصناف الآمنة — من ملف مصفوفة الحساسية.\n٣. غيّر القفازات واستخدم اللوحة البنفسجية المخصصة لأي طلب حساسية.\n٤. يُعطى الطلب تذكرة مميزة — ترافق الطعام حتى الكاونتر.\n\n**إن لم تكن متأكدًا ١٠٠٪، فالإجابة دائمًا: «دعني أتحقق من المشرف».**"}},
+ {k:['delivery','order pickup','busy','توصيل','زحمة'],a:{en:"During delivery rush (SOP CS-04):\n\n1. Delivery riders wait in the designated zone — never at the counter\n2. Check every bag against the rider's app order number before handover\n3. Sealed bags leave sealed — if a seal is broken, remake the order\n4. If a rider waits more than 10 minutes, notify the shift supervisor\n\nTarget: order out within 90 seconds of rider arrival. ⏱️",ar:"في ذروة التوصيل (الإجراء CS-04):\n\n١. مندوبو التوصيل ينتظرون في المنطقة المخصصة — وليس عند الكاونتر\n٢. افحص كل كيس مع رقم الطلب في تطبيق المندوب قبل التسليم\n٣. الأكياس المغلقة تخرج مغلقة — إذا كان الختم مكسورًا أعد الطلب\n٤. إذا انتظر المندوب أكثر من ١٠ دقائق، أبلغ مشرف الوردية\n\nالهدف: تسليم الطلب خلال ٩٠ ثانية من وصول المندوب. ⏱️"}}
+];
+const FALLBACK={en:"I don't have that in the SOP knowledge base yet — I've noted your question for the training team. Meanwhile, you can ask your shift supervisor, or try one of these topics I know well 👇",ar:"هذا غير موجود في قاعدة الإجراءات بعد — سجّلت سؤالك لفريق التدريب. في هذه الأثناء اسأل مشرف الوردية، أو جرّب أحد المواضيع التي أعرفها جيدًا 👇"};
+const CHIPS_EN=["What temperature should the fridge be?","A customer says the order is wrong","How do I wash hands properly?","Show me the closing checklist","What do I do on my first day?","A guest has an allergy"];
+const CHIPS_AR=["ما درجة حرارة الثلاجة الصحيحة؟","العمون يقول الطلب خطأ","كيف أغسل يدي؟","اعرض قائمة الإغلاق","أول يوم عندي شلون؟","عند ضيف حساسية"];
+
+const chat=document.getElementById('chat');
+function fmt(s){return s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function addMsg(txt,who,ar){
+  const d=document.createElement('div');
+  d.className='msg '+who+(ar?' ar':'');
+  d.innerHTML=fmt(txt);
+  chat.appendChild(d);
+  if(who==='me'){const t=document.createElement('div');t.className='time';t.textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});chat.appendChild(t);}
+  chat.scrollTop=chat.scrollHeight;
+}
+function botReply(q){
+  const ar=/[\u0600-\u06FF]/.test(q);
+  const typing=document.getElementById('typing');
+  typing.style.display='flex';
+  setTimeout(()=>{
+    typing.style.display='none';
+    const hit=KB.find(e=>e.k.some(k=>q.toLowerCase().includes(k)));
+    const a=hit?hit.a:FALLBACK;
+    addMsg(ar?a.ar:a.en,'bot',ar);
+  },900+Math.random()*700);
+}
+function send(){
+  const q=document.getElementById('q').value.trim();
+  if(!q)return;
+  addMsg(q,'me',/[\u0600-\u06FF]/.test(q));
+  document.getElementById('q').value='';
+  botReply(q);
+}
+document.getElementById('send').addEventListener('click',send);
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+function renderChips(){
+  const box=document.getElementById('chips');box.innerHTML='';
+  (lang==='ar'?CHIPS_AR:CHIPS_EN).forEach(c=>{
+    const b=document.createElement('button');b.className='chip';b.textContent=c;
+    b.onclick=()=>{addMsg(c,'me',lang==='ar');botReply(c);};
+    box.appendChild(b);
+  });
+}
+/* opening messages */
+addMsg(lang==='ar'?"أهلًا! أنا مساعد التدريب — اسألني عن أي إجراء تشغيل، بالإنجليزية أو العربية.":"Hi! I'm your training assistant — ask me anything about your SOPs, in English or Arabic.",'bot');
+setTimeout(()=>addMsg(lang==='ar'?"جرّب أحد الأسئلة بالأسفل 👇":"Try one of the questions below 👇",'bot'),400);
+renderChips();
+
+
+/* ---------------- dashboard drill-down ---------------- */
+const DRILL={
+ a:{t:{en:"Brand A — branch detail",ar:"العلامة أ — تفاصيل الفروع"},rows:[
+   ["Al Hamra Tower","97%",""],["Salmiya","92%",""],["Hawally","88%",""],["Avenues","95%",""],["Fintas","86%","2 crew flagged"],["Farwaniya","90%",""]]},
+ b:{t:{en:"Brand B — branch detail",ar:"العلامة ب — تفاصيل الفروع"},rows:[
+   ["Sharq","83%",""],["Mahboula","74%","1 crew flagged"],["Jahra","71%","2 crew flagged"],["Fahaheel","81%",""]]},
+ c:{t:{en:"Brand C — branch detail",ar:"العلامة ج — تفاصيل الفروع"},rows:[
+   ["Avenues Mall","89%",""],["Fintas","79%",""],["Salmiya","86%",""],["Hawally","82%","1 crew flagged"],["Farwaniya","84%",""],["Riggae","77%",""],["Bayan","85%",""],["Sabah Al Salem","88%",""],["Salwa","83%",""]]},
+ n:{t:{en:"New joiners — first 30 days",ar:"الموظفون الجدد — أول ٣٠ يوم"},rows:[
+   ["Week 1 cohort","92%",""],["Week 2 cohort","71%","1 crew flagged"],["Week 3 cohort","58%","2 crew flagged"],["Week 4 cohort","41%","onboarding in progress"]]}
+};
+document.querySelectorAll('.brow').forEach(r=>r.addEventListener('click',()=>{
+  const key=r.dataset.b, d=DRILL[key], box=document.getElementById('drill');
+  if(box.dataset.open===key){box.style.display='none';box.dataset.open='';return;}
+  box.dataset.open=key;
+  let h='<h4>'+d.t[lang]+'</h4>';
+  d.rows.forEach(row=>{h+='<div class="drow"><label>'+row[0]+'</label><div class="track"><div class="fill" style="width:'+row[1]+'"></div></div><span>'+row[1]+'</span>'+(row[2]?'<span class="flag">'+row[2]+'</span>':'')+'</div>';});
+  box.innerHTML=h;box.style.display='block';
+}));
+
+/* ---------------- quiz logic ---------------- */
+let answered=false, sureVal=null;
+document.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+  if(answered)return;answered=true;
+  const right=o.dataset.c==='1';
+  document.querySelectorAll('.opt').forEach(x=>{
+    if(x.dataset.c==='1')x.classList.add('right');
+    else if(x===o)x.classList.add('wrong');
+  });
+  document.getElementById('confrow').style.display='flex';
+}));
+document.querySelectorAll('.conf').forEach(c=>c.addEventListener('click',()=>{
+  sureVal=c.dataset.v;
+  const v=document.getElementById('verdict');
+  const chosenWrong=document.querySelector('.opt.wrong')!==null;
+  if(sureVal==='sure'&&chosenWrong){
+    v.className='verdict risk';
+    v.innerHTML=(lang==='ar'?"⚠️ <b>واثق لكن مخطئ</b> — هذا بالضبط الخطر الذي نبحث عنه. تم حجزك لمراجعة قصيرة مع مشرفك غدًا، وسيتابع معك المساعد الموضوع خلال الأسبوع.":"⚠️ <b>Confident but wrong</b> — this is exactly the risk we're looking for. You're booked for a 5-minute coaching chat with your supervisor tomorrow, and the assistant will follow up with you on this topic over the week.");
+  }else if(sureVal==='sure'){
+    v.className='verdict good';
+    v.innerHTML=(lang==='ar'?"✅ <b>صحيح وواثق</b> — ممتاز. سيتابع معك المساعد هذا السؤال بعد أسبوعين ثم بعد شهر للتأكد من ثبات المعلومة.":"✅ <b>Correct and confident</b> — excellent. The assistant will re-ask you this in 2 weeks, then in a month, to make sure it sticks.");
+  }else{
+    v.className='verdict good';
+    v.innerHTML=(lang==='ar'?"👍 لا مشكلة — عدم التأكد خطوة نحو التعلم. راجع درس <b>FS-04: حفظ الأطعمة</b> في التطبيق، وسيعيد المساعد السؤال بعد يومين.":"👍 No problem — being unsure is how learning starts. Review lesson <b>FS-04: Food storage</b> in the app, and the assistant will re-ask in 2 days.");
+  }
+}));
+</script>
+</body>
+</html>
