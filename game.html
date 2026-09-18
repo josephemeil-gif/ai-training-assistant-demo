@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Quest — Training Game</title>
+<style>
+:root{--navy:#0d1b2a;--teal:#0f4c5c;--amber:#f77f00;--amber2:#fca311;--bg:#f6f8fa;--line:#e4e9ee;--ok:#2a9d5c;--bad:#d1495b}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Arial,sans-serif}
+body{background:linear-gradient(180deg,#eef4f7,var(--bg));min-height:100vh;color:#1b2631}
+[dir="rtl"] body{text-align:right}
+.wrap{max-width:860px;margin:0 auto;padding:18px 14px 40px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+h1{font-size:22px;color:var(--navy)}
+h1 span{color:var(--amber)}
+.lang{background:#fff;border:1px solid var(--line);border-radius:20px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--teal)}
+.xpbar{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.xpbar b{color:var(--teal);font-size:15px}
+.meter{flex:1;min-width:140px;height:9px;background:#edf1f4;border-radius:6px;overflow:hidden}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--amber));border-radius:6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:18px;padding:22px 18px;background:#fff;cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(13,27,42,.13)}
+.card .emo{font-size:42px}
+.card h3{font-size:16px;margin:10px 0 6px;color:var(--navy)}
+.card p{font-size:12.5px;color:#5c6b7a;line-height:1.5}
+.card .stars{position:absolute;top:14px;inset-inline-end:14px;font-size:15px}
+.card .c1{background:linear-gradient(135deg,#fff3e0,#ffe0b3)}
+.card .c2{background:linear-gradient(135deg,#e3f2fd,#bbdefb)}
+.card .c3{background:linear-gradient(135deg,#e8f5e9,#c8e6c9)}
+.banner{margin-top:18px;background:#fff8ec;border:1px solid #f2dfb8;border-radius:14px;padding:13px 16px;font-size:12.5px;color:#8a6d1f;line-height:1.55}
+/* game screen */
+#game{display:none}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.hud .box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:13.5px;font-weight:700;color:var(--navy)}
+.hud .hearts{font-size:16px;letter-spacing:2px}
+.qbox{background:var(--navy);color:#fff;border-radius:14px;padding:14px 18px;font-size:16px;font-weight:700;margin-bottom:12px;line-height:1.4;text-align:center}
+canvas{width:100%;height:auto;border-radius:18px;touch-action:none;background:#dff1f5;display:block}
+.hint{font-size:12px;color:#5c6b7a;text-align:center;margin-top:10px}
+/* end screen */
+#end{display:none;text-align:center}
+.trophy{font-size:64px}
+.endcard{max-width:560px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px 20px}
+.endcard h2{color:var(--navy);font-size:22px;margin-bottom:8px}
+.starrow{font-size:34px;letter-spacing:4px;margin:10px 0}
+.score{font-size:14px;color:#5c6b7a;margin-bottom:16px}
+.recap{text-align:start;background:#f4f8fa;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 18px}
+.recap .r{display:flex;gap:10px;margin-bottom:10px;font-size:12.5px;line-height:1.5}
+.recap .r b{color:var(--teal)}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{border:0;border-radius:14px;padding:13px 22px;font-size:14px;font-weight:700;cursor:pointer}
+.btn.p{background:var(--amber);color:#fff}
+.btn.s{background:#fff;border:1.5px solid var(--teal);color:var(--teal)}
+footer{text-align:center;font-size:11.5px;color:#8a97a3;margin-top:26px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1 data-en="Learning Quest 🎮" data-ar="مهمة التعلم 🎮">Learning Quest 🎮</h1>
+    <button class="lang" id="langBtn">العربية</button>
+  </div>
+  <div class="xpbar">
+    <b id="lvlName">Kitchen Rookie</b>
+    <div class="meter"><i id="xpFill" style="width:0%"></i></div>
+    <span id="xpTxt" style="font-size:12.5px;color:#5c6b7a">0 XP</span>
+  </div>
+
+  <!-- HOME -->
+  <div id="home">
+    <p style="font-size:13.5px;color:#5c6b7a;margin-bottom:16px" id="pickTxt">Pick a topic and play a 2-minute game. Catch the correct answers with your chef!</p>
+    <div class="cards" id="cards"></div>
+    <div class="banner" id="genNote"></div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game">
+    <div class="hud">
+      <div class="box" id="hudQ"></div>
+      <div class="box hearts" id="hudHearts"></div>
+      <div class="box" id="hudScore"></div>
+    </div>
+    <div class="qbox" id="qText"></div>
+    <canvas id="cv" width="800" height="460"></canvas>
+    <p class="hint" id="ctlHint"></p>
+  </div>
+
+  <!-- END -->
+  <div id="end">
+    <div class="endcard">
+      <div class="trophy" id="endEmoji">🏆</div>
+      <h2 id="endTitle"></h2>
+      <div class="starrow" id="endStars"></div>
+      <div class="score" id="endScore"></div>
+      <div class="recap" id="recap"></div>
+      <div class="btns">
+        <button class="btn p" id="againBtn"></button>
+        <button class="btn s" id="homeBtn"></button>
+      </div>
+    </div>
+  </div>
+
+  <footer>AI Training Game — concept demo · Prepared by Clark, Joseph's assistant · September 2026</footer>
+</div>
+
+<script>
+/* ============ i18n ============ */
+let lang='en';
+const T={
+ pickTxt:{en:"Pick a topic and play a 2-minute game. Catch the correct answers with your chef!",ar:"اختر موضوعًا والعب لعبة دقيقتين. امسك الإجابات الصحيحة مع الشيف!"},
+ genNote:{en:"💡 Demo: these 3 games are pre-built. In production, the AI bot designs a fresh mini-game for ANY topic the trainee picks — new questions, new look, same fun.",ar:"💡 في العرض: هذه الألعاب الثلاثة جاهزة. في التطبيق الفعلي، يصمم البوت الذكي لعبة جديدة لأي موضوع يختاره المتدرب — أسئلة جديدة ومظهر جديد وبنفس المتعة."},
+ hudQ:{en:"Question",ar:"سؤال"},
+ score:{en:"Score",ar:"النقاط"},
+ ctl:{en:"Move: drag on the screen / arrow keys · Catch ✅ avoid ❌",ar:"الحركة: اسحب على الشاشة أو استخدم الأسهم · امسك ✅ وتجنب ❌"},
+ endWin:{en:"Level complete! 🎉",ar:"أكملت المستوى! 🎉"},
+ endLose:{en:"Out of hearts — try again! 💪",ar:"انتهت المحاولات — جرب مرة أخرى! 💪"},
+ learned:{en:"What you learned",ar:"ماذا تعلمت"},
+ again:{en:"Play again",ar:"العب مرة أخرى"},
+ home:{en:"Back to topics",ar:"رجوع للمواضيع"},
+ stars:{en:"stars",ar:"نجوم"}
+};
+const LEVELS=[[0,"Kitchen Rookie","مساعد المطبخ"],[300,"Line Cook","طاهي الخط"],[700,"Sous Chef","سو شيف"],[1200,"Head Chef","الشيف الأول"],[2000,"Training Legend","أسطورة التدريب"]];
+
+/* ============ content: topics × questions (bilingual) ============ */
+const TOPICS=[
+ {id:"fs",emo:"🍔",cls:"c1",color:"#f59e0b",
+  name:{en:"Food Safety",ar:"سلامة الغذاء"},
+  desc:{en:"Fridge temps, handwashing, storage — the daily essentials.",ar:"حرارة الثلاجة، غسل اليدين، التخزين — الأساسيات اليومية."},
+  qs:[
+   {q:{en:"What is the max temperature for the ready-to-eat fridge?",ar:"ما أقصى حرارة لثلاجة الأطعمة الجاهزة؟"},
+    opts:[{t:{en:"5°C",ar:"5°C"},ok:1},{t:{en:"10°C",ar:"10°C"},ok:0},{t:{en:"15°C",ar:"15°C"},ok:0}],
+    learn:{en:"Ready-to-eat food is stored at 5°C or below (SOP FS-04).",ar:"الأطعمة الجاهزة تُحفظ عند ٥ درجات أو أقل (الإجراء FS-04)."}},
+   {q:{en:"Minimum handwashing time?",ar:"الحد الأدنى لغسل اليدين؟"},
+    opts:[{t:{en:"20 sec",ar:"٢٠ ثانية"},ok:1},{t:{en:"5 sec",ar:"٥ ثوان"},ok:0},{t:{en:"10 sec",ar:"١٠ ثوان"},ok:0}],
+    learn:{en:"20 seconds minimum, scrubbing between fingers (SOP FS-02).",ar:"٢٠ ثانية على الأقل مع فرك بين الأصابع (الإجراء FS-02)."}},
+   {q:{en:"Where does raw meat go in the fridge?",ar:"أين توضع اللحوم النيئة في الثلاجة؟"},
+    opts:[{t:{en:"Bottom shelf",ar:"الرف السفلي"},ok:1},{t:{en:"Top shelf",ar:"الرف العلوي"},ok:0},{t:{en:"Door",ar:"الباب"},ok:0}],
+    learn:{en:"Raw meat always goes on the bottom shelf, below ready-to-eat food.",ar:"اللحوم النيئة دائمًا في الرف السفلي، أسفل الأطعمة الجاهزة."}},
+   {q:{en:"You see a guest's allergy order. What do you do?",ar:"طلب فيه حساسية طعام. ماذا تفعل؟"},
+    opts:[{t:{en:"Tell supervisor",ar:"أبلغ المشرف"},ok:1},{t:{en:"Guess it",ar:"أخمّن"},ok:0},{t:{en:"Skip the flag",ar:"أتجاهل العلامة"},ok:0}],
+    learn:{en:"Never guess with allergies — always tell the shift supervisor (SOP FS-07).",ar:"لا تخمّن مع الحساسية أبدًا — بلغ مشرف الوردية (الإجراء FS-07)."}},
+   {q:{en:"Hot holding temperature for cooked food?",ar:"حرارة الحفظ الساخن للطعام المطبوخ؟"},
+    opts:[{t:{en:"Above 60°C",ar:"فوق ٦٠°"},ok:1},{t:{en:"Above 30°C",ar:"فوق ٣٠°"},ok:0},{t:{en:"Room temp",ar:"حرارة الغرفة"},ok:0}],
+    learn:{en:"Cooked food is held above 60°C until served.",ar:"الطعام المطبوخ يُحفظ فوق ٦٠ درجة حتى التقديم."}}
+  ]},
+ {id:"cs",emo:"🤝",cls:"c2",color:"#2563eb",
+  name:{en:"Customer Service",ar:"خدمة العملاء"},
+  desc:{en:"Happy guests, calm handling, L.A.S.T. model.",ar:"عملاء سعداء، تعامل هادئ، نموذج L.A.S.T."},
+  qs:[
+   {q:{en:"First step of the L.A.S.T. model?",ar:"الخطوة الأولى في نموذج L.A.S.T؟"},
+    opts:[{t:{en:"Listen",ar:"استمع"},ok:1},{t:{en:"Argue",ar:"تجادل"},ok:0},{t:{en:"Ignore",ar:"تجاهل"},ok:0}],
+    learn:{en:"Listen first — let the guest finish, never interrupt (SOP CS-01).",ar:"استمع أولًا — دع الضيف يكمل ولا تقاطعه (الإجراء CS-01)."}},
+   {q:{en:"A guest is angry. Who do you call?",ar:"ضيف غاضب. من تنادي؟"},
+    opts:[{t:{en:"Shift supervisor",ar:"مشرف الوردية"},ok:1},{t:{en:"Nobody",ar:"لا أحد"},ok:0},{t:{en:"Security",ar:"الأمن"},ok:0}],
+    learn:{en:"If a guest raises their voice, call the shift supervisor immediately.",ar:"إذا رفع الضيف صوته، نادِ مشرف الوردية فورًا."}},
+   {q:{en:"Last step of L.A.S.T?",ar:"الخطوة الأخيرة في L.A.S.T؟"},
+    opts:[{t:{en:"Thank them",ar:"اشكرهم"},ok:1},{t:{en:"Walk away",ar:"اذهب"},ok:0},{t:{en:"Say 'next!'",ar:"قل «التالي!»"},ok:0}],
+    learn:{en:"Always end by thanking the guest for telling us.",ar:"أنهِ دائمًا بشكر الضيف على إبلاغنا."}},
+   {q:{en:"Who approves a remake on the spot?",ar:"من يوافق على إعادة الطلب فورًا؟"},
+    opts:[{t:{en:"Supervisor",ar:"المشرف"},ok:1},{t:{en:"Anyone",ar:"أي شخص"},ok:0},{t:{en:"The cook",ar:"الطاهي"},ok:0}],
+    learn:{en:"The shift supervisor can approve remakes up to 15 KD on the spot.",ar:"مشرف الوردية يمكنه الموافقة حتى ١٥ دينارًا فورًا."}},
+   {q:{en:"Guest says the order is wrong. You…",ar:"الضيف يقول الطلب خطأ. أنت…"},
+    opts:[{t:{en:"Apologize + remake",ar:"أعتذر وأعيد"},ok:1},{t:{en:"Say 'not our fault'",ar:"أقول «ليس غلطنا»"},ok:0},{t:{en:"Debate the order",ar:"أجادل فيه"},ok:0}],
+    learn:{en:"Apologize sincerely, then remake the order on priority.",ar:"اعتذر بصدق ثم أعد تنفيذ الطلب كأولوية."}}
+  ]},
+ {id:"cl",emo:"🌙",cls:"c3",color:"#16a34a",
+  name:{en:"Closing Shift",ar:"إغلاق الوردية"},
+  desc:{en:"End the day right: food, cash, equipment.",ar:"أنهِ اليوم صح: الطعام، النقدية، المعدات."},
+  qs:[
+   {q:{en:"What happens to leftover food?",ar:"ماذا يحدث للطعام المتبقي؟"},
+    opts:[{t:{en:"Label + date",ar:"ألصق ملصقًا بالتاريخ"},ok:1},{t:{en:"Leave it",ar:"أتركه"},ok:0},{t:{en:"Mix it",ar:"أخلطه"},ok:0}],
+    learn:{en:"Wrap, label and date all leftover food before closing.",ar:"غلّف وسمّز وتاريخ كل الطعام المتبقي قبل الإغلاق."}},
+   {q:{en:"Cash is counted with…",ar:"تُعد النقدية مع…"},
+    opts:[{t:{en:"Supervisor + log",ar:"المشرف + السجل"},ok:1},{t:{en:"Just you",ar:"وحدك"},ok:0},{t:{en:"Tomorrow",ar:"غدًا"},ok:0}],
+    learn:{en:"Back-count cash with the shift supervisor and sign the log.",ar:"إعادة عد النقدية مع مشرف الوردية والتوقيع في السجل."}},
+   {q:{en:"Fryers at closing are…",ar:"القلايات وقت الإغلاق…"},
+    opts:[{t:{en:"Filtered",ar:"تُصفّى"},ok:1},{t:{en:"Left on",ar:"تبقى شغالة"},ok:0},{t:{en:"Covered",ar:"تُغطى"},ok:0}],
+    learn:{en:"Fryers are filtered, grills cooled, hot-holding switched off.",ar:"القلايات تُصفّى، الشوايات تُبرد، والحفظ الساخن يُطفأ."}},
+   {q:{en:"Last step before clocking out?",ar:"آخر خطوة قبل إنهاء الدوام؟"},
+    opts:[{t:{en:"Temp log",ar:"سجل الحرارة"},ok:1},{t:{en:"Chat",ar:"دردشة"},ok:0},{t:{en:"Phone check",ar:"أفحص هاتفي"},ok:0}],
+    learn:{en:"The final temperature log is the last thing before you clock out.",ar:"سجل درجات الحرارة الأخير هو آخر شيء قبل إنهاء الدوام."}},
+   {q:{en:"Stations at closing are…",ar:"المحطات وقت الإغلاق…"},
+    opts:[{t:{en:"Cleaned + sanitized",ar:"تنظف وتعقم"},ok:1},{t:{en:"Rinsed only",ar:"تُشطف فقط"},ok:0},{t:{en:"Left for morning",ar:"تُترك للصباح"},ok:0}],
+    learn:{en:"All stations are cleaned and sanitized, then the floor.",ar:"كل المحطات تُنظف وتُعقم ثم الأرضية."}}
+  ]}
+];
+
+/* ============ persistence ============ */
+let SAVE=JSON.parse(localStorage.getItem('lq_save')||'{"xp":0,"stars":{}}');
+function saveGame(){localStorage.setItem('lq_save',JSON.stringify(SAVE))}
+function levelFor(xp){let n=LEVELS[0];for(const l of LEVELS){if(xp>=l[0])n=l}return n}
+function renderXP(){
+  const lv=levelFor(SAVE.xp), next=LEVELS[LEVELS.indexOf(lv)+1];
+  const pct=next?Math.min(100,(SAVE.xp-lv[0])/(next[0]-lv[0])*100):100;
+  document.getElementById('lvlName').textContent=lv[lang==='ar'?2:1];
+  document.getElementById('xpFill').style.width=pct+'%';
+  document.getElementById('xpTxt').textContent=SAVE.xp+' XP';
+}
+
+/* ============ lang toggle ============ */
+document.getElementById('langBtn').addEventListener('click',()=>{
+  lang=lang==='en'?'ar':'en';
+  document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  document.getElementById('langBtn').textContent=lang==='ar'?'English':'العربية';
+  document.getElementById('pickTxt').textContent=T.pickTxt[lang];
+  document.getElementById('genNote').textContent=T.genNote[lang];
+  renderXP();renderCards();
+  if(document.getElementById('game').style.display==='block')updateHUD();
+});
+
+/* ============ home cards ============ */
+function renderCards(){
+  const box=document.getElementById('cards');box.innerHTML='';
+  TOPICS.forEach(t=>{
+    const stars=SAVE.stars[t.id]||0;
+    const c=document.createElement('div');c.className='card '+t.cls;
+    c.innerHTML='<span class="stars">'+'⭐'.repeat(stars)+'✩'.repeat(3-stars)+'</span>'+
+      '<div class="emo">'+t.emo+'</div><h3>'+t.name[lang]+'</h3><p>'+t.desc[lang]+'</p>';
+    c.addEventListener('click',()=>startGame(t));
+    box.appendChild(c);
+  });
+}
+renderCards();renderXP();
+document.getElementById('genNote').textContent=T.genNote[lang];
+
+/* ============ game engine ============ */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const W=800,H=460;
+let G=null,raf=null;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function startGame(topic){
+  G={topic,qs:shuffle(topic.qs),qi:0,hearts:3,score:0,streak:0,caught:0,missed:0,
+     chef:{x:W/2,w:110,h:96,dir:0},bubble:null,queue:[],confetti:[],fx:[],t0:performance.now(),over:false};
+  document.getElementById('home').style.display='none';
+  document.getElementById('end').style.display='none';
+  document.getElementById('game').style.display='block';
+  document.getElementById('ctlHint').textContent=T.ctl[lang];
+  nextQuestion();
+  cancelAnimationFrame(raf);loop();
+}
+function nextQuestion(){
+  const q=G.qs[G.qi];
+  G.queue=shuffle(q.opts.map((o,i)=>({...o,id:i})));
+  G.bubble=null;
+  document.getElementById('qText').textContent=q.q[lang];
+  spawn();
+  updateHUD();
+}
+function spawn(){
+  if(!G.queue.length){return}
+  const o=G.queue.shift();
+  G.bubble={x:60+Math.random()*(W-160),y:-30,v:1.6+Math.random()*0.7+G.qi*0.08,r:34,ok:o.ok,t:o.t[lang]};
+}
+function updateHUD(){
+  document.getElementById('hudQ').textContent=T.hudQ[lang]+' '+(G.qi+1)+'/'+G.qs.length;
+  document.getElementById('hudHearts').textContent='❤️'.repeat(G.hearts)+'🤍'.repeat(3-G.hearts);
+  document.getElementById('hudScore').textContent=T.score[lang]+': '+G.score;
+}
+/* controls */
+let dragging=false;
+function moveChef(clientX){
+  const rect=cv.getBoundingClientRect();
+  const x=(clientX-rect.left)*(W/rect.width);
+  G.chef.x=Math.max(60,Math.min(W-60,x));
+}
+cv.addEventListener('pointerdown',e=>{dragging=true;moveChef(e.clientX)});
+cv.addEventListener('pointermove',e=>{if(dragging)moveChef(e.clientX)});
+window.addEventListener('pointerup',()=>dragging=false);
+window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')G&&(G.chef.dir=-1);if(e.key==='ArrowRight')G&&(G.chef.dir=1)});
+window.addEventListener('keyup',e=>{if(G&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))G.chef.dir=0});
+
+function burst(x,y,color){for(let i=0;i<26;i++)G.confetti.push({x,y,vx:(Math.random()-0.5)*7,vy:-Math.random()*6-2,c:['#fca311','#0f4c5c','#2a9d5c','#d1495b','#2563eb'][i%5],s:4+Math.random()*4,life:60})}
+function endGame(win){
+  G.over=true;cancelAnimationFrame(raf);
+  document.getElementById('game').style.display='none';
+  const e=document.getElementById('end');e.style.display='block';
+  const stars=win?Math.max(1,G.hearts):0;
+  document.getElementById('endEmoji').textContent=win?'🏆':'💪';
+  document.getElementById('endTitle').textContent=win?T.endWin[lang]:T.endLose[lang];
+  document.getElementById('endStars').textContent='⭐'.repeat(stars)+'✩'.repeat(3-stars);
+  document.getElementById('endScore').textContent=(lang==='ar'?'النقاط: ':'Score: ')+G.score+(win?' · +'+(G.score)+' XP':'');
+  if(win){SAVE.xp+=G.score;SAVE.stars[G.topic.id]=Math.max(SAVE.stars[G.topic.id]||0,stars);saveGame();renderXP()}
+  let h='<b>'+(lang==='ar'?'ماذا تعلمت:':'What you learned:')+'</b><br><br>';
+  G.qs.slice(0,win?G.qs.length:G.qi).forEach((q,i)=>{h+='<div class="r"><span>'+(i+1)+'.</span><span><b>'+q.q[lang]+'</b><br>'+q.learn[lang]+'</span></div>'});
+  document.getElementById('recap').innerHTML=h;
+  document.getElementById('againBtn').textContent=T.again[lang];
+  document.getElementById('homeBtn').textContent=T.home[lang];
+}
+document.getElementById('againBtn').addEventListener('click',()=>startGame(G.topic));
+document.getElementById('homeBtn').addEventListener('click',()=>{
+  document.getElementById('end').style.display='none';
+  document.getElementById('home').style.display='block';
+  document.getElementById('game').style.display='none';
+  renderCards();
+});
+
+function drawChef(t){
+  const c=G.chef,bob=Math.sin(t/180)*4;
+  const x=c.x,y=H-58+bob;
+  ctx.font='52px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🧑‍🍳',x,y);
+  ctx.font='13px Segoe UI';
+  ctx.fillStyle='rgba(13,27,42,.55)';
+  ctx.fillText(lang==='ar'?'أنت!':'You!',x,y+38);
+}
+function drawBubble(b){
+  const ok=b.ok;
+  ctx.save();
+  ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+  const g=ctx.createRadialGradient(b.x-10,b.y-12,4,b.x,b.y,b.r);
+  if(ok){g.addColorStop(0,'#eefaf2');g.addColorStop(1,'#8fe0ae')}
+  else{g.addColorStop(0,'#fdeef0');g.addColorStop(1,'#f2a5b0')}
+  ctx.fillStyle=g;ctx.fill();
+  ctx.lineWidth=3;ctx.strokeStyle=ok?'#2a9d5c':'#d1495b';ctx.stroke();
+  ctx.fillStyle='#0d1b2a';ctx.font='bold 14px Segoe UI';
+  ctx.fillText(b.t,b.x,b.y);
+  ctx.restore();
+}
+function loop(){
+  const t=performance.now()-G.t0;
+  ctx.clearRect(0,0,W,H);
+  /* sky + ground */
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#dff1f5');sky.addColorStop(1,'#f7fbfc');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#e8eef2';ctx.fillRect(0,H-30,W,30);
+  ctx.strokeStyle='#d3dde3';ctx.beginPath();ctx.moveTo(0,H-30);ctx.lineTo(W,H-30);ctx.stroke();
+  /* clouds */
+  ctx.fillStyle='rgba(255,255,255,.85)';
+  for(let i=0;i<3;i++){const cx=((t/60)+i*300)%(W+200)-100;ctx.beginPath();ctx.arc(cx,60+((i*67)%40),24,0,Math.PI*2);ctx.arc(cx+22,60+((i*67)%40),18,0,Math.PI*2);ctx.arc(cx-22,64+((i*67)%40),16,0,Math.PI*2);ctx.fill()}
+  if(!G.over&&G){
+    G.chef.x+=G.chef.dir*6.5;
+    G.chef.x=Math.max(60,Math.min(W-60,G.chef.x));
+    const b=G.bubble;
+    if(b){
+      b.y+=b.v;
+      const cy=H-58,catchR=b.r+40;
+      const hitX=Math.abs(b.x-G.chef.x)<catchR,hitY=b.y>cy-52&&b.y<cy+18;
+      if(hitX&&hitY){
+        if(b.ok){
+          G.score+=100+G.streak*20;G.streak++;G.caught++;
+          burst(b.x,b.y,'#2a9d5c');G.bubble=null;
+          G.qi++;
+          if(G.qi>=G.qs.length){setTimeout(()=>endGame(true),350)}
+          else setTimeout(()=>{if(!G.over)nextQuestion()},400);
+        }else{
+          G.hearts--;G.streak=0;G.missed++;
+          burst(b.x,b.y,'#d1495b');G.bubble=null;updateHUD();
+          if(G.hearts<=0){setTimeout(()=>endGame(false),350)}
+          else if(G.queue.length){setTimeout(()=>{if(!G.over)spawn()},500)}
+          else{G.qi++;G.qi>=G.qs.length?setTimeout(()=>endGame(true),350):setTimeout(()=>{if(!G.over)nextQuestion()},400)}
+        }
+        updateHUD();
+      }else if(b.y>H+40){
+        if(b.ok){
+          G.hearts--;G.streak=0;G.missed--;updateHUD();
+          if(G.hearts<=0){setTimeout(()=>endGame(false),350);return}
+          G.qi++;
+          G.qi>=G.qs.length?setTimeout(()=>endGame(true),350):setTimeout(()=>{if(!G.over)nextQuestion()},400);
+        }else{
+          if(G.queue.length)spawn();else{G.qi++;G.qi>=G.qs.length?setTimeout(()=>endGame(true),350):setTimeout(()=>{if(!G.over)nextQuestion()},300)}
+        }
+      }
+    }
+    if(!G.bubble&&!G.over&&G.queue.length&&!G._pending){G._pending=setTimeout(()=>{if(!G.over&&G.queue.length)spawn();G._pending=null},600)}
+  }
+  /* confetti */
+  G.confetti=G.confetti.filter(p=>p.life>0);
+  G.confetti.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life--;ctx.globalAlpha=Math.min(1,p.life/30);ctx.fillStyle=p.c;ctx.fillRect(p.x,p.y,p.s,p.s);ctx.globalAlpha=1});
+  if(G.bubble)drawBubble(G.bubble);
+  drawChef(t);
+  raf=requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
